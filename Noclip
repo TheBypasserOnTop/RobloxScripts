@@ -1,0 +1,62 @@
+return function(state)
+    local Players = game:GetService("Players")
+    local RunService = game:GetService("RunService")
+    local player = Players.LocalPlayer
+
+    while not player do
+        wait()
+        player = Players.LocalPlayer
+    end
+
+    local ranObj = player:FindFirstChild("RanScript")
+    if not ranObj or ranObj.Value == false then
+        player:Kick("Bypassing detected")
+        return
+    end
+
+    local char = player.Character or player.CharacterAdded:Wait()
+    local humanoid = char:FindFirstChildOfClass("Humanoid")
+    local connections = {}
+    local enabled = false
+
+    local function setCollisions(state)
+        if not char then return end
+        for _, part in ipairs(char:GetDescendants()) do
+            if part:IsA("BasePart") then
+                part.CanCollide = not state
+            end
+        end
+    end
+
+    local function startNoclip()
+        if enabled then return end
+        enabled = true
+        setCollisions(true)
+        connections.noclip = RunService.Stepped:Connect(function()
+            char = player.Character
+            if char then
+                for _, part in ipairs(char:GetDescendants()) do
+                    if part:IsA("BasePart") then
+                        part.CanCollide = false
+                    end
+                end
+            end
+        end)
+    end
+
+    local function stopNoclip()
+        if not enabled then return end
+        enabled = false
+        if connections.noclip then
+            connections.noclip:Disconnect()
+            connections.noclip = nil
+        end
+        setCollisions(false)
+    end
+
+    if state then
+        startNoclip()
+    else
+        stopNoclip()
+    end
+end
